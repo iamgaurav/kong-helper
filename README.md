@@ -6,7 +6,8 @@ Helper Container to periodically check and update Kong with the services, routes
 
 Kong version supported 1.1.x
 
-###Sample Config
+
+### Sample Config
 
 ```
 {
