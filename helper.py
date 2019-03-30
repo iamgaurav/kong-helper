@@ -3,7 +3,7 @@ import json
 from kong import Kong
 import logging
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(settings.DEBUG_LEVEL)
 
 
 try:
@@ -54,5 +54,6 @@ if __name__ == "__main__":
         plugins = service_config.get("plugins", [])
         for plugin in plugins:
             plugin['service'] = {'id': service_request.get('id')}
-            plugin['route'] = {'id', route_request.get('id')}
-
+            plugin['route'] = {'id':route_request.get('id')}
+            logging.info("Updating Plugin {}".format(plugin))
+            plugin_request = kong.add_plugin(plugin, service_request.get('id'))

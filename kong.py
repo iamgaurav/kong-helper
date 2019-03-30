@@ -2,14 +2,13 @@ import requests
 import config
 import logging
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(config.DEBUG_LEVEL)
 
 
 class Kong:
 
     services = None
     routes = None
-    plugins = None
 
     """
     Helper function to pull all the current services in kong
@@ -30,10 +29,10 @@ class Kong:
     """
     Helper function to pull all the current plugins in kong
     """
-    def __update_plugins(self):
-        req = requests.get("{0}/{1}".format(config.KONG_URL, 'plugins'))
+    def __plugin_info(self, service_id):
+        req = requests.get("{0}/{1}/{2}/{3}".format(config.KONG_URL, 'services', service_id, 'plugins'))
         response = req.json()
-        self.routes = list(map(lambda x: x['name'], response.get('data')))
+        return dict(map(lambda x: (x['name'], x['id']), response.get('data')))
 
     @staticmethod
     def update_service(service_config):
@@ -72,19 +71,19 @@ class Kong:
 
 
     @staticmethod
-    def update_plugin(plugin_config):
-        request = requests.put('{0}/routes/{1}'.format(config.KONG_URL, plugin_config.get('name')),
+    def update_plugin(plugin_config, plugin_id):
+        request = requests.put('{0}/{1}/{2}'.format(config.KONG_URL, 'plugins', plugin_id),
                                json=plugin_config)
         logging.debug(request.json())
         return request.json()
 
-    def add_plugin(self, plugin_config, update=True):
-        self.__update_routes()
-        if plugin_config.get('name') in self.plugins and update:
+    def add_plugin(self, plugin_config, service_id, update=True):
+        plugins = self.__plugin_info(service_id)
+        if plugin_config.get('name') in plugins and update:
             logging.debug("Plugin exists in Kong. Updating it")
-            return Kong.update_route(plugin_config)
+            return Kong.update_plugin(plugin_config, plugins.get(plugin_config.get('name')))
 
         logging.debug("Adding plugin to Kong")
-        request = requests.post('{0}/routes'.format(config.KONG_URL), json=plugin_config)
+        request = requests.post('{0}/plugins'.format(config.KONG_URL), json=plugin_config)
         logging.debug(request.json())
         return request.json()
